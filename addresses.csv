@@ -1,11 +1,10 @@
-1675 Parkcrest Circle 400,Reston VA 20190,305000,30
-11200 Chestnut Grove Square 302,Reston VA 20190,269990,35
-11200 Chestnut Grove Square 304,Reston VA 20190,283999,36
-11212 Chestnut Grove Square 116,Reston VA 20190,297000,37
-2038 Headlands Circle,Reston VA 20191,359900,25
-11301 Headlands Court,Reston VA 20191,449900,15
-2057 Wethersfield Court,Reston VA 20191,519900,10
-11404 Turnmill Lane,Reston VA 20191,525000,11
-11200 Reston Station Boulevard 30101,Reston VA 20190,618716,5
-11490 Commerce Park Drive 430,Reston VA 20191,790000,2
-address, citystatezip, price (zillow), property tax (year), distance to whereever comparing metro
+1675 Parkcrest Circle 400,Reston VA 20190,305000
+11200 Chestnut Grove Square 302,Reston VA 20190,269990
+11200 Chestnut Grove Square 304,Reston VA 20190,283999
+11212 Chestnut Grove Square 116,Reston VA 20190,297000
+2038 Headlands Circle,Reston VA 20191,359900
+11301 Headlands Court,Reston VA 20191,449900
+2057 Wethersfield Court,Reston VA 20191,519900
+11404 Turnmill Lane,Reston VA 20191,525000
+11200 Reston Station Boulevard 30101,Reston VA 20190,618716
+11490 Commerce Park Drive 430,Reston VA 20191,790000
