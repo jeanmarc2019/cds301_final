@@ -4,10 +4,9 @@ import csv
 from latlongHelper import addressToLatLong, batchAdressConverter, calculateDistance, batchDistanceCalculation
 
 # TODO: utilize public tax info to generate this, use zillowHelper.py to estimate/display realestate/rent costs
-# set these before using
-mapQuestKey = "" # get key from mapquest https://developer.mapquest.com/
-targetAddress = "" # <street number> <name> <type> e.g. 1234 anywhere blvd
-targetCityStateZip = "" # <city> <state abbreviation> <zip> e.g. Podunk VA 20170
+mapQuestKey = "" # REQUIRED: get key from mapquest https://developer.mapquest.com/
+targetAddress = "" # (optional) <street number> <name> <type> e.g. 1234 anywhere blvd
+targetCityStateZip = "" # (optional) <city> <state abbreviation> <zip> e.g. Podunk VA 20170
 
 entries = {
     'address': [],
