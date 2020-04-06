@@ -15,7 +15,7 @@ def batchAdressConverter(addresses, citystatezips, key):
     output = []
     locationsList = []
     for i in range(len(addresses)):
-        locationsList.append([addresses[i] + citystatezips[i]])
+        locationsList.append(addresses[i] + citystatezips[i])
     parameters = {
         'location': locationsList,
         'key': key,
