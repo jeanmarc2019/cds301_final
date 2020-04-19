@@ -11,7 +11,8 @@ def addressToLatLong(address, citystatezip, key):
     data = r.json()["results"][0]["locations"][0]["displayLatLng"]
     return (data["lat"],data["lng"])
 
-def batchAdressConverter(addresses, citystatezips, key):
+def batchAddressConverter(addresses, citystatezips, key):
+    print("Converting addresses to latitudes and longitudes...")
     output = []
     locationsList = []
     for i in range(len(addresses)):
@@ -26,6 +27,7 @@ def batchAdressConverter(addresses, citystatezips, key):
     for i in range(len(r.json()["results"])):
         data = r.json()["results"][i]["locations"][0]["displayLatLng"]
         output.append((data["lat"], data["lng"]))
+    print("DONE")
     return output
 
 def calculateDistance(loc1, loc2):
@@ -46,6 +48,8 @@ def calculateDistance(loc1, loc2):
 
 def batchDistanceCalculation(locations, target):
     output = []
+    print("Calculating distances...")
     for location in locations:
         output.append(calculateDistance(location, target))
+    print("DONE")
     return output

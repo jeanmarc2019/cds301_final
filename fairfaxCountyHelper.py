@@ -23,14 +23,15 @@ def getObjectsByZip(zip, limit):
 def getAssessedValue(parid, aprType):
     address = assessedValUrl + "query?where=PARID%3D'"+parid.replace(" ", "+")+"'&objectIds=&time=&resultType=none&outFields=&returnIdsOnly=true&returnUniqueIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&cacheHint=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&having=&resultOffset=&resultRecordCount=&sqlFormat=none&f=pjson&token="
     headers = {'Accept': 'application/json'}
-    r = requests.get(url = address, headers=headers)
+    r = requests.get(url=address, headers=headers)
+
+    # it SHOULDN'T ever be greater than 1, but it's a precaution
     if len(r.json()["objectIds"]) > 1:
         print('WARNING: ' + parid + ' had multiple assessments assigned to it')
     address = assessedValUrl + str(r.json()["objectIds"][0]) + "?f=pjson"
     r2 = requests.get(url = address, headers=headers)
     return r2.json()["feature"]["attributes"][aprType]
 
-# appraisal options are APRTOT, APRBLDG, and APRLAND
 def generateSourceData(zip, limit, aprType):
     print("Generating data...")
     baseData = getObjectsByZip(zip, limit)
