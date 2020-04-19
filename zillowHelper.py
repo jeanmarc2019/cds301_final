@@ -13,11 +13,12 @@ parameters = {
     'citystatezip': urllib.parse.quote(citystatezip),
     'rentzestimate': True
 }
-searchEndpoint = "https://www.zillow.com/webservice/GetSearchResults.htm"
+searchEndpoint = "http://www.zillow.com/webservice/Directory.htm"
 headers = {'Accept': 'application/json'}
 def get_submission_records(try_number=1):
     try:
         r = requests.get(url = searchEndpoint, headers=headers, params = parameters)
+        print(r.text)
         data = r.json()
     except (requests.exceptions.ConnectionError, json.decoder.JSONDecodeError):
         time.sleep(2**try_number + random.random()*0.01) #exponential backoff
