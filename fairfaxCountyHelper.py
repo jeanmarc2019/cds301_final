@@ -45,8 +45,7 @@ def generateSourceData(zip, limit, aprType):
         'price': []
     }
     for parid in baseData.keys():
-        print('Processing data... This might take a while... [%d%%]\r' % float(
-            (1 - (limit - len(output)) / limit))*100, end="")
+        print('Processing data... This might take a while...')
         assessedVal = getAssessedValue(parid, aprType)
         if assessedVal == None or parid == None:
             continue # skips bad entries
