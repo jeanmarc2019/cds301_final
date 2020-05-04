@@ -12,6 +12,7 @@ def getObjectsByZip(zip, limit):
     # limits higher than 10 take a while
     indeces = random.sample(range(len(objectIDs)), limit) if limit != None else range(len(objectIDs))
     for index in indeces:
+        progress(len(output), len(indeces))
         address = locationLookUpUrl + str(objectIDs[index]) + "?f=pjson"
         r2 = requests.get(url=address, headers=headers)
         objectAttr = r2.json()["feature"]["attributes"]
@@ -19,6 +20,7 @@ def getObjectsByZip(zip, limit):
             'address': str(objectAttr["ADDRESS_1"]),
             'citystatezip': objectAttr["CITY"] + ' ' + objectAttr["STATE"] + ' ' + objectAttr["ZIP"]
         }
+    print("\nDONE\n")
     return output
 def getAssessedValue(parid, aprType):
     address = assessedValUrl + "query?where=PARID%3D'"+parid.replace(" ", "+")+"'&objectIds=&time=&resultType=none&outFields=&returnIdsOnly=true&returnUniqueIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&cacheHint=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&having=&resultOffset=&resultRecordCount=&sqlFormat=none&f=pjson&token="
@@ -26,31 +28,41 @@ def getAssessedValue(parid, aprType):
     r = requests.get(url=address, headers=headers)
 
     # it SHOULDN'T ever be greater than 1, but it's a precaution
-    if len(r.json()["objectIds"]) > 1:
-        print('WARNING: ' + parid + ' had multiple assessments assigned to it')
-    if len(r.json()["objectIds"]) == 1:
+    if len(r.json()["objectIds"]) >= 1:
         address = assessedValUrl + str(r.json()["objectIds"][0]) + "?f=pjson"
         r2 = requests.get(url = address, headers=headers)
         return r2.json()["feature"]["attributes"][aprType]
     else:
-        print('WARNING: ' + parid + ' had no assessments assigned to it')
         return None
 
 def generateSourceData(zip, limit, aprType):
     print("Generating data...")
+    status = ""
     baseData = getObjectsByZip(zip, limit)
     output = {
         'address': [],
         'citystatezip': [],
         'price': []
     }
+    print('Processing data... This might take a while...')
     for parid in baseData.keys():
-        print('Processing data... This might take a while...')
+        progress(len(output['price']), limit, status)
+        status = ""
         assessedVal = getAssessedValue(parid, aprType)
         if assessedVal == None or parid == None:
+            status = str(parid) + " had no assessments attached to it"
             continue # skips bad entries
         output['price'].append(getAssessedValue(parid, aprType))
         output['address'].append(baseData[parid]['address'])
         output['citystatezip'].append(baseData[parid]['citystatezip'])
     print("\nDONE\n" + str(output))
     return output
+
+def progress(count, total, status=''):
+    bar_len = 60
+    filled_len = int(round(bar_len * count / float(total)))
+
+    percents = round(100.0 * count / float(total), 1)
+    bar = '=' * filled_len + '-' * (bar_len - filled_len)
+
+    print('[%s] %s%s ...%s\r' % (bar, percents, '%', status), end="")

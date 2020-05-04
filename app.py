@@ -23,14 +23,20 @@ locationsLatLong = batchAddressConverter(entries['address'], entries['citystatez
 entries['distance'] = batchDistanceCalculation(locationsLatLong, convertedTarget)
 
 print("Generating plotly graph...")
+# If something fails here, it's because the lengths don't match
+print(len(entries['address']))
+print(len(entries['citystatezip']))
+print(len(entries['distance']))
+print(len(entries['price']))
+combinedNames = [entries['address'][i] + ', ' + entries['citystatezip'][i] for i in range(len(entries['address']))]
 df = pd.DataFrame(dict(distance=entries['distance'], price=entries['price'],
-                       citystatezip=entries['citystatezip']))
+                       name=combinedNames))
 
 name = targetAddress if targetAddress != "1908 Reston Station Blvd" else "Wiehle-Reston East Metro"
 # Use column names of df for the different parameters x, y, color, ...
 fig = px.scatter(df, x="distance", y="price",
                  title="Distance From "+name+" vs. Price",
-                 hover_name="citystatezip", hover_data=['citystatezip'],
+                 hover_name="name", hover_data=['name'],
                 )
 fig.update_layout(
     xaxis=dict(
