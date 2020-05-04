@@ -8,11 +8,7 @@ mapQuestKey = "" # REQUIRED: get key from mapquest https://developer.mapquest.co
 targetAddress = "" # (optional) <street number> <name> <type> e.g. 1234 anywhere blvd
 targetCityStateZip = "" # (optional) <city> <state abbreviation> <zip> e.g. Podunk VA 20170
 appraisalType = "APRTOT" # appraisal options are APRTOT, APRBLDG, and APRLAND
-sampleSize = 5 # anything higher than 10 takes a while TODO: optimize code to decrease time
-
-if sampleSize > 99:
-    sampleSize = 99
-    print("Application does not support more 99 locations at this time") #TODO: fix this
+sampleSize = 500 # anything higher than 10 takes a while TODO: optimize code to decrease time
 
 # wiehle reston metro is default location
 if targetAddress == "" or targetCityStateZip == "":

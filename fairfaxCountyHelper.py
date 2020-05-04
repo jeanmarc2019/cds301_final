@@ -28,9 +28,13 @@ def getAssessedValue(parid, aprType):
     # it SHOULDN'T ever be greater than 1, but it's a precaution
     if len(r.json()["objectIds"]) > 1:
         print('WARNING: ' + parid + ' had multiple assessments assigned to it')
-    address = assessedValUrl + str(r.json()["objectIds"][0]) + "?f=pjson"
-    r2 = requests.get(url = address, headers=headers)
-    return r2.json()["feature"]["attributes"][aprType]
+    if len(r.json()["objectIds"]) == 1:
+        address = assessedValUrl + str(r.json()["objectIds"][0]) + "?f=pjson"
+        r2 = requests.get(url = address, headers=headers)
+        return r2.json()["feature"]["attributes"][aprType]
+    else:
+        print('WARNING: ' + parid + ' had no assessments assigned to it')
+        return None
 
 def generateSourceData(zip, limit, aprType):
     print("Generating data...")
@@ -41,8 +45,13 @@ def generateSourceData(zip, limit, aprType):
         'price': []
     }
     for parid in baseData.keys():
+        print('Processing data... This might take a while... [%d%%]\r' % float(
+            (1 - (limit - len(output)) / limit))*100, end="")
+        assessedVal = getAssessedValue(parid, aprType)
+        if assessedVal == None or parid == None:
+            continue # skips bad entries
+        output['price'].append(getAssessedValue(parid, aprType))
         output['address'].append(baseData[parid]['address'])
         output['citystatezip'].append(baseData[parid]['citystatezip'])
-        output['price'].append(getAssessedValue(parid, aprType))
-    print("DONE\n" + str(output))
+    print("\nDONE\n" + str(output))
     return output

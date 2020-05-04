@@ -17,20 +17,26 @@ def batchAddressConverter(addresses, citystatezips, key):
     locationsList = []
     for i in range(len(addresses)):
         locationsList.append(addresses[i] + citystatezips[i])
-    parameters = {
-        'location': locationsList,
-        'key': key,
-    }
     searchEndpoint = "http://www.mapquestapi.com/geocoding/v1/batch"
     headers = {'Accept': 'application/json'}
-    r = requests.get(url=searchEndpoint, headers=headers, params=parameters)
-    for i in range(len(r.json()["results"])):
-        data = r.json()["results"][i]["locations"][0]["displayLatLng"]
-        output.append((data["lat"], data["lng"]))
+    for i in range(int(len(locationsList)/99)):
+        parameters = {
+            'location': locationsList[99*i:99*(i+1)],
+            'key': key,
+        }
+        r = requests.get(url=searchEndpoint, headers=headers, params=parameters)
+        for j in range(len(r.json()["results"])):
+            if len(r.json()["results"][j]["locations"]) == 0:
+                output.append(None) # No point in trying to keep working with a bad location
+                continue
+            data = r.json()["results"][j]["locations"][0]["displayLatLng"]
+            output.append((data["lat"], data["lng"]))
     print("DONE")
     return output
 
 def calculateDistance(loc1, loc2):
+    if loc1 == None or loc2 == None:
+        return None
     # initial variables and calculations
     R = 6373.0 # radius of Earth
     lat1 = math.radians(loc1[0])
