@@ -19,7 +19,7 @@ def batchAddressConverter(addresses, citystatezips, key):
         locationsList.append(addresses[i] + citystatezips[i])
     searchEndpoint = "http://www.mapquestapi.com/geocoding/v1/batch"
     headers = {'Accept': 'application/json'}
-    for i in range(int(len(locationsList)/99)):
+    for i in range(int(len(locationsList)/99)+1):
         parameters = {
             'location': locationsList[99*i:99*(i+1)],
             'key': key,
