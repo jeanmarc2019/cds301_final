@@ -14,8 +14,8 @@ colors = []
 
 def create_bins(lower_bound, width, quantity):
     bins = []
-    for low in range(lower_bound,
-                     lower_bound + quantity * width + 1, width):
+    for low in range(int(lower_bound),
+                     int(lower_bound + quantity * width + 1), int(width)):
         bins.append((low, low + width))
     return bins
 
@@ -25,7 +25,6 @@ def find_bin(value, bins):
         if bins[i][0] <= value < bins[i][1]:
             return i
     return -1
-
 # wiehle reston metro is default location
 if targetAddress == "" or targetCityStateZip == "":
     targetAddress = "1908 Reston Station Blvd"
@@ -50,19 +49,19 @@ for location in locationsLatLong:
     lats.append(location[0])
     longs.append(location[1])
 
-# meanPrice = 0
-# sigma = 0
-# for price in entries['price']:
-#     meanPrice += price
-# meanPrice /= len(entries['price'])
-# for price in entries['price']:
-#     sigma += (price - meanPrice) ** 2
-# sigma /= len(entries['price'])
-# sigma **= 0.5
-# bins = create_bins(lower_bound=min(entries['price']),
-#                    width=sigma,
-#                    quantity=numOfBins)
-# entries['bin'] = [find_bin(entries['price'][i], bins) for i in range(len(entries['price']))]
+meanPrice = 0
+sigma = 0
+for price in entries['price']:
+    meanPrice += price
+meanPrice /= len(entries['price'])
+for price in entries['price']:
+    sigma += (price - meanPrice) ** 2
+sigma /= len(entries['price'])
+sigma **= 0.5
+bins = create_bins(lower_bound=min(entries['price']),
+                   width=sigma,
+                   quantity=numOfBins)
+entries['bin'] = [find_bin(entries['price'][i], bins) for i in range(len(entries['price']))]
 
 combinedNames = [entries['address'][i] + ', ' + entries['citystatezip'][i] for i in range(len(entries['address']))]
 
