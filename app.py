@@ -10,21 +10,7 @@ targetCityStateZip = "" # (optional) <city> <state abbreviation> <zip> e.g. Podu
 appraisalType = "APRTOT" # appraisal options are APRTOT, APRBLDG, and APRLAND
 sampleSize = 3 # anything higher than 10 takes a while TODO: optimize code to decrease time
 numOfBins = 8
-colors = []
 
-def create_bins(lower_bound, width, quantity):
-    bins = []
-    for low in range(int(lower_bound),
-                     int(lower_bound + quantity * width + 1), int(width)):
-        bins.append((low, low + width))
-    return bins
-
-
-def find_bin(value, bins):
-    for i in range(0, len(bins)):
-        if bins[i][0] <= value < bins[i][1]:
-            return i
-    return -1
 # wiehle reston metro is default location
 if targetAddress == "" or targetCityStateZip == "":
     targetAddress = "1908 Reston Station Blvd"
@@ -48,20 +34,6 @@ longs = []
 for location in locationsLatLong:
     lats.append(location[0])
     longs.append(location[1])
-
-meanPrice = 0
-sigma = 0
-for price in entries['price']:
-    meanPrice += price
-meanPrice /= len(entries['price'])
-for price in entries['price']:
-    sigma += (price - meanPrice) ** 2
-sigma /= len(entries['price'])
-sigma **= 0.5
-bins = create_bins(lower_bound=min(entries['price']),
-                   width=sigma,
-                   quantity=numOfBins)
-entries['bin'] = [find_bin(entries['price'][i], bins) for i in range(len(entries['price']))]
 
 combinedNames = [entries['address'][i] + ', ' + entries['citystatezip'][i] for i in range(len(entries['address']))]
 
@@ -90,7 +62,7 @@ entries['price'].append(0)
 df = pd.DataFrame(dict(distance=entries['distance'], price=entries['price'],
                        name=combinedNames, lats=lats, longs=longs))
 fig = px.scatter_mapbox(df, lat="lats", lon="longs", hover_name="name", hover_data=['price'],
-                        color_discrete_sequence=["fuchsia"], zoom=15, height=600,
+                        color="price", zoom=15, height=600,
                         center=dict(lat=convertedTarget[0], lon=convertedTarget[1]))
 fig.update_layout(mapbox_style="open-street-map")
 fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
