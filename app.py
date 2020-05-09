@@ -13,7 +13,9 @@ arguments = {
     'additionalZips': ["20192", "20191", "20170", "20194"], # (optional) enter other zip codes near the area you are looking at for wider area
     'appraisalType': "APRTOT", # appraisal options are APRTOT, APRBLDG, and APRLAND
     'sampleSize': 2000, # anything higher than 10 takes a while TODO: optimize code to decrease time
-    'zScoreLimit': 0.1, # (float > 0) refinement level of data.  The smaller the refinement, the more accurate the data is
+    'zScoreLimitPrice': 0.05, # (float > 0) refinement level of data
+    'zScoreLimitDistance': 0.25, # (float > 0) refinement level of distance
+    'maximumDistance': 2.5, # (float > 0) used to prevent weird considerations of locations of places in other states
     'csvPath': "" # path of scraped data you wish to use.  Otherwise runs scraper
 }
 
@@ -43,30 +45,41 @@ entries['distance'] = batchDistanceCalculation(
     convertedTarget
 )
 
+# refines data based on maximum distance allowed
+i = 0
+startLen = len(entries['distance'])
+while i < len(entries['distance']):
+    if entries['distance'][i] > arguments['maximumDistance']:
+        for value in entries.values():
+            value.pop(i)
+        continue
+    i += 1
+print("Distance refinement removed " + str(startLen - len(entries['distance'])) + " entries")
+
 sigmaPrice, meanPrice = np.std(entries['price']), np.mean(entries['price'])
 sigmaDistance, meanDistance = np.std(entries['distance']), np.mean(entries['distance'])
 
 # refines data based on maximum z-score allowed
 i = 0
-removed = []
+startLen = len(entries['price'])
 while i < len(entries['price']):
     zScorePrice = np.abs((entries['price'][i] - meanPrice) / sigmaPrice)
     zScoreDistance = np.abs((entries['distance'][i] - meanDistance) / sigmaDistance)
-    if zScorePrice > arguments['zScoreLimit'] or zScoreDistance > arguments['zScoreLimit']:
+    if zScorePrice > arguments['zScoreLimitPrice'] or zScoreDistance > arguments['zScoreLimitDistance']:
         for value in entries.values():
-            removed.append(value.pop(i))
+            value.pop(i)
         continue
     i += 1
 if len(entries['price']) == 0:
     print("Refinement was too high and there's nothing to display")
 else:
-    print("Refinement removed " + str(len(removed)) + " entries")
+    print("Z-Score refinement removed " + str(startLen - len(entries['price'])) + " entries")
     df = pd.DataFrame(dict(distance=entries['distance'], price=entries['price'],
                            name=entries['name'], lat=entries['lat'], long=entries['long']))
     # Use column names of df for the different parameters x, y, color, ...
     fig = px.scatter(df, x="distance", y="price",
                      title="Distance From " + targetName + " vs. Price",
-                     hover_name="name", hover_data=['name'],
+                     hover_name="name", hover_data=['name'], trendline="ols"
                     )
     fig.update_layout(
         xaxis=dict(
