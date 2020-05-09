@@ -10,7 +10,8 @@ def getObjectsByZip(zip, limit):
     output = {}
 
     # limits higher than 10 take a while
-    indeces = random.sample(range(len(objectIDs)), limit) if limit != None else range(len(objectIDs))
+    checkLimitValue = limit if len(objectIDs) > limit else len(objectIDs) - 1
+    indeces = random.sample(range(len(objectIDs)), checkLimitValue) if limit != None else range(len(objectIDs))
     for index in indeces:
         progress(len(output), len(indeces))
         address = locationLookUpUrl + str(objectIDs[index]) + "?f=pjson"
@@ -35,10 +36,13 @@ def getAssessedValue(parid, aprType):
     else:
         return None
 
-def generateSourceData(zip, limit, aprType):
-    print("Generating data...")
+def generateSourceData(zip, limit, aprType, additionalZips):
+    print("Generating base data...")
     status = ""
     baseData = getObjectsByZip(zip, limit)
+    for additionalZip in additionalZips:
+        print("Generating data for additional zipcode " + additionalZip + "...")
+        baseData = {**baseData, **getObjectsByZip(additionalZip,limit)}
     output = {
         'address': [],
         'citystatezip': [],
@@ -46,7 +50,7 @@ def generateSourceData(zip, limit, aprType):
     }
     print('Processing data... This might take a while...')
     for parid in baseData.keys():
-        progress(len(output['price']), limit, status)
+        progress(len(output['price']), limit * (len(additionalZips) + 1), status)
         status = ""
         assessedVal = getAssessedValue(parid, aprType)
         if assessedVal == None or parid == None:
