@@ -2,9 +2,10 @@ import plotly.express as px
 import numpy as np
 import pandas as pd
 from latlongHelper import addressToLatLong, batchDistanceCalculation
-from scraper import scrapeData
+from scraper import scrapeData, polyfit
 
 # initial variables
+# uncomment lines 107 and 129 to view figures in browser
 arguments = {
     # wiehle reston metro is default location
     'targetAddress': "1908 Reston Station Blvd", # (optional) <street number> <name> <type> e.g. 1234 anywhere blvd
@@ -12,10 +13,12 @@ arguments = {
     'mapQuestKey': "", # REQUIRED: get key from mapquest https://developer.mapquest.com/
     'additionalZips': ["20192", "20191", "20170", "20194"], # (optional) enter other zip codes near the area you are looking at for wider area
     'appraisalType': "APRTOT", # appraisal options are APRTOT, APRBLDG, and APRLAND
-    'sampleSize': 2000, # anything higher than 10 takes a while TODO: optimize code to decrease time
-    'zScoreLimitPrice': 0.05, # (float > 0) refinement level of data
-    'zScoreLimitDistance': 0.25, # (float > 0) refinement level of distance
-    'maximumDistance': 2.5, # (float > 0) used to prevent weird considerations of locations of places in other states
+    'sampleSize': 4000, # anything higher than 10 takes a while TODO: optimize code to decrease time
+    'zScoreLimitPrice': 3, # (float > 0) refinement level of data
+    'zScoreLimitDistance': 30, # (float > 0) refinement level of distance
+    'maximumDistance': 1.25, # (float > 0) used to prevent weird considerations of locations of places in other states
+    'increments': 0.125, # (maximumDistance > float > 0) at what increments the data zooms into the center each iteration
+    'iterations': 6, # (int > 0) number of iterations to run the tool
     'csvPath': "" # path of scraped data you wish to use.  Otherwise runs scraper
 }
 
@@ -44,63 +47,85 @@ entries['distance'] = batchDistanceCalculation(
     [(entries['lat'][i], entries['long'][i]) for i in range(len(entries['address']))],
     convertedTarget
 )
+entriesAtLevel = {key: value[:] for key, value in entries.items()}
+for iteration in range(arguments["iterations"]):
+    distanceAtLevel = arguments['maximumDistance'] - arguments["increments"] * iteration
+    if distanceAtLevel < 0:
+        print("OH NO, distance is below zero")
+        break
+    # refines data based on distance
+    i = 0
+    startLen = len(entriesAtLevel['distance'])
+    while i < len(entriesAtLevel['distance']):
+        if entriesAtLevel['distance'][i] > distanceAtLevel:
+            for value in entriesAtLevel.values():
+                value.pop(i)
+            continue
+        i += 1
+    if len(entriesAtLevel['distance']) == 0:
+        print("Distance was too small and now there's nothing to show")
+        break
+    print("Distance refinement removed " + str(startLen - len(entriesAtLevel['distance'])) + " entriesAtLevel")
 
-# refines data based on maximum distance allowed
-i = 0
-startLen = len(entries['distance'])
-while i < len(entries['distance']):
-    if entries['distance'][i] > arguments['maximumDistance']:
-        for value in entries.values():
-            value.pop(i)
-        continue
-    i += 1
-print("Distance refinement removed " + str(startLen - len(entries['distance'])) + " entries")
+    sigmaPrice, meanPrice = np.std(entriesAtLevel['price']), np.mean(entriesAtLevel['price'])
+    sigmaDistance, meanDistance = np.std(entriesAtLevel['distance']), np.mean(entriesAtLevel['distance'])
 
-sigmaPrice, meanPrice = np.std(entries['price']), np.mean(entries['price'])
-sigmaDistance, meanDistance = np.std(entries['distance']), np.mean(entries['distance'])
-
-# refines data based on maximum z-score allowed
-i = 0
-startLen = len(entries['price'])
-while i < len(entries['price']):
-    zScorePrice = np.abs((entries['price'][i] - meanPrice) / sigmaPrice)
-    zScoreDistance = np.abs((entries['distance'][i] - meanDistance) / sigmaDistance)
-    if zScorePrice > arguments['zScoreLimitPrice'] or zScoreDistance > arguments['zScoreLimitDistance']:
-        for value in entries.values():
-            value.pop(i)
-        continue
-    i += 1
-if len(entries['price']) == 0:
-    print("Refinement was too high and there's nothing to display")
-else:
-    print("Z-Score refinement removed " + str(startLen - len(entries['price'])) + " entries")
-    df = pd.DataFrame(dict(distance=entries['distance'], price=entries['price'],
-                           name=entries['name'], lat=entries['lat'], long=entries['long']))
-    # Use column names of df for the different parameters x, y, color, ...
-    fig = px.scatter(df, x="distance", y="price",
-                     title="Distance From " + targetName + " vs. Price",
-                     hover_name="name", hover_data=['name'], trendline="ols"
-                    )
-    fig.update_layout(
-        xaxis=dict(
-            range=(0, int(max(entries['distance'])+2)),
-            constrain='domain'
+    # refines data based on maximum z-score allowed
+    i = 0
+    startLen = len(entriesAtLevel['price'])
+    while i < len(entriesAtLevel['price']):
+        zScorePrice = np.abs((entriesAtLevel['price'][i] - meanPrice) / sigmaPrice)
+        zScoreDistance = np.abs((entriesAtLevel['distance'][i] - meanDistance) / sigmaDistance)
+        if zScorePrice > arguments['zScoreLimitPrice'] or zScoreDistance > arguments['zScoreLimitDistance']:
+            for value in entriesAtLevel.values():
+                value.pop(i)
+            continue
+        i += 1
+    Rsquared = polyfit(entriesAtLevel['distance'], entriesAtLevel['price'], 1)
+    if len(entriesAtLevel['price']) == 0:
+        print("Refinement was too high and there's nothing to display")
+    else:
+        print("Z-Score refinement removed " + str(startLen - len(entriesAtLevel['price'])) + " entriesAtLevel")
+        df = pd.DataFrame(dict(distance=entriesAtLevel['distance'], price=entriesAtLevel['price'],
+                               name=entriesAtLevel['name'], lat=entriesAtLevel['lat'], long=entriesAtLevel['long']))
+        # Use column names of df for the different parameters x, y, color, ...
+        fig = px.scatter(df, x="distance", y="price",
+                         title="Distance From " + targetName + " vs. Price",
+                         hover_name="name", hover_data=['name'], trendline="ols"
+                        )
+        fig.update_layout(
+            xaxis_title="Distance (miles)",
+            yaxis_title="Tax Assessment (USD)"
         )
-    )
-    fig.show()
-    # add target address
-    entries['lat'].append(convertedTarget[0])
-    entries['long'].append(convertedTarget[1])
-    entries['name'].append(targetName)
-    entries['distance'].append(None)
-    entries['price'].append(None)
-    df = pd.DataFrame(dict(distance=entries['distance'], price=entries['price'],
-                           name=entries['name'], lat=entries['lat'], long=entries['long'])
-                      )
-    fig = px.scatter_mapbox(df, lat="lat", lon="long", hover_name="name", hover_data=['price'],
-                            color='price', zoom=15, height=600,
-                            center=dict(lat=convertedTarget[0], lon=convertedTarget[1]))
-    fig.update_layout(mapbox_style="open-street-map")
-    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-    fig.show()
-    print("DONE")
+        filename = "./visualizations/" +\
+                        targetName + "Distance" +\
+                        str(distanceAtLevel) +\
+                        "Rsquared" + str(round(Rsquared['determination'], 3)) + ".png"
+        f = open(filename, "w+")
+        f.close()
+        fig.write_image(filename)
+        # fig.show()
+        # add target address
+        entriesAtLevel['lat'].append(convertedTarget[0])
+        entriesAtLevel['long'].append(convertedTarget[1])
+        entriesAtLevel['name'].append(targetName)
+        entriesAtLevel['distance'].append(None)
+        entriesAtLevel['price'].append(None)
+        df = pd.DataFrame(dict(distance=entriesAtLevel['distance'], price=entriesAtLevel['price'],
+                               name=entriesAtLevel['name'], lat=entriesAtLevel['lat'], long=entriesAtLevel['long'])
+                          )
+        fig = px.scatter_mapbox(df, lat="lat", lon="long", hover_name="name", hover_data=['price'],
+                                color='price', zoom=13, height=600,
+                                center=dict(lat=convertedTarget[0], lon=convertedTarget[1]))
+        fig.update_layout(mapbox_style="open-street-map")
+        fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+        filename = "./visualizations/" + \
+                        targetName + "Distance" + \
+                        str(distanceAtLevel) + \
+                        "map.png"
+        f = open(filename, "w+")
+        f.close()
+        fig.write_image(filename)
+        # fig.show()
+        print("DONE")
+    entriesAtLevel = {key: value[:] for key, value in entries.items()}

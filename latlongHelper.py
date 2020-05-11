@@ -38,7 +38,7 @@ def calculateDistance(loc1, loc2):
     if loc1 == None or loc2 == None:
         return None
     # initial variables and calculations
-    R = 6373.0 # radius of Earth
+    R = 3958.8 # radius of Earth
     lat1 = math.radians(loc1[0])
     lon1 = math.radians(loc1[1])
     lat2 = math.radians(loc2[0])
