@@ -1,5 +1,6 @@
-import requests, random, urllib.parse
-# 0174, 0262, 0261, 0164
+import requests, random
+import pandas as pd
+
 locationLookUpUrl = "https://services1.arcgis.com/ioennV6PpG5Xodq0/ArcGIS/rest/services/OpenData_A2/FeatureServer/0/"
 assessedValUrl = "https://services1.arcgis.com/ioennV6PpG5Xodq0/ArcGIS/rest/services/OpenData_A6/FeatureServer/2/"
 def getObjectsByZip(zip, limit):
@@ -36,29 +37,61 @@ def getAssessedValue(parid, aprType):
     else:
         return None
 
-def generateSourceData(zip, limit, aprType, additionalZips):
+def getAddress(parid):
+    address = locationLookUpUrl + '/query?where=PARCEL_PIN%3D\'' + str(parid) + '\'&objectIds=&time=&resultType=none&outFields=&returnIdsOnly=true&returnUniqueIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&cacheHint=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&having=&resultOffset=&resultRecordCount=&sqlFormat=none&f=pjson&token='
+    headers = {'Accept': 'application/json'}
+    r = requests.get(url=address, headers=headers)
+    # print(r.json())
+    if len(r.json()["objectIds"]) == 0:
+        return None
+    address = locationLookUpUrl + str(r.json()["objectIds"][0]) + "?f=pjson"
+    r2 = requests.get(url=address, headers=headers)
+    objectAttr = r2.json()["feature"]["attributes"]
+    return (str(objectAttr["ADDRESS_1"]), objectAttr["CITY"] + ' ' + objectAttr["STATE"] + ' ' + objectAttr["ZIP"])
+
+def generateSourceData(zip, limit, aprType, additionalZips, dbData):
     print("Generating base data...")
     status = ""
-    baseData = getObjectsByZip(zip, limit)
-    for additionalZip in additionalZips:
-        print("Generating data for additional zipcode " + additionalZip + "...")
-        baseData = {**baseData, **getObjectsByZip(additionalZip,limit)}
     output = {
         'address': [],
         'citystatezip': [],
         'price': []
     }
-    print('Processing data... This might take a while...')
-    for parid in baseData.keys():
-        progress(len(output['price']), limit * (len(additionalZips) + 1), status)
-        status = ""
-        assessedVal = getAssessedValue(parid, aprType)
-        if assessedVal == None or parid == None:
-            status = str(parid) + " had no assessments attached to it"
-            continue # skips bad entries
-        output['price'].append(getAssessedValue(parid, aprType))
-        output['address'].append(baseData[parid]['address'])
-        output['citystatezip'].append(baseData[parid]['citystatezip'])
+    if dbData == "":
+        baseData = getObjectsByZip(zip, limit)
+        for additionalZip in additionalZips:
+            print("Generating data for additional zipcode " + additionalZip + "...")
+            baseData = {**baseData, **getObjectsByZip(additionalZip,limit)}
+
+        print('Processing data... This might take a while...')
+        for parid in baseData.keys():
+            progress(len(output['price']), limit * (len(additionalZips) + 1), status)
+            status = ""
+            assessedVal = getAssessedValue(parid, aprType)
+            if assessedVal == None or parid == None:
+                status = str(parid) + " had no assessments attached to it"
+                continue # skips bad entries
+            output['price'].append(getAssessedValue(parid, aprType))
+            output['address'].append(baseData[parid]['address'])
+            output['citystatezip'].append(baseData[parid]['citystatezip'])
+    else:
+        print('Processing data from csv... This might take a while...')
+        baseData = pd.read_csv(dbData)
+        count_row = baseData.shape[0]
+        # forces limit from config if it contains for rows than the limit
+        if count_row > limit:
+            count_row = limit
+        for index, row in baseData.iterrows():
+            if index == count_row:
+                break
+            progress(index, count_row, status)
+            status = ""
+            locationData = getAddress(row['PARID'])
+            if locationData == None:
+                continue
+            output['price'].append(row['PRICE'])
+            output['address'].append(locationData[0])
+            output['citystatezip'].append(locationData[1])
     print("\nDONE\n" + str(output))
     return output
 

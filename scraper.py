@@ -8,7 +8,8 @@ def scrapeData(arguments):
         arguments["targetCityStateZip"].split(' ')[-1],
         limit=arguments["sampleSize"],
         aprType=arguments["appraisalType"],
-        additionalZips=arguments["additionalZips"]
+        additionalZips=arguments["additionalZips"],
+        dbData=arguments["dbData"]
     )
 
     numberOfEntries = len(entries['address'])

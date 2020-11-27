@@ -5,21 +5,21 @@ from latlongHelper import addressToLatLong, batchDistanceCalculation
 from scraper import scrapeData, polyfit
 
 # initial variables
-# uncomment lines 107 and 129 to view figures in browser
 arguments = {
-    # wiehle reston metro is default location
+    # wiehle reston metro is default location Lake Fairfax Dr, Reston, VA 20190
     'targetAddress': "1908 Reston Station Blvd", # (optional) <street number> <name> <type> e.g. 1234 anywhere blvd
     'targetCityStateZip': "Reston VA 20190", # (optional) <city> <state abbreviation> <zip> e.g. Podunk VA 20170
     'mapQuestKey': "", # REQUIRED: get key from mapquest https://developer.mapquest.com/
     'additionalZips': ["20192", "20191", "20170", "20194"], # (optional) enter other zip codes near the area you are looking at for wider area
     'appraisalType': "APRTOT", # appraisal options are APRTOT, APRBLDG, and APRLAND
-    'sampleSize': 4000, # anything higher than 10 takes a while TODO: optimize code to decrease time
-    'zScoreLimitPrice': 3, # (float > 0) refinement level of data
-    'zScoreLimitDistance': 30, # (float > 0) refinement level of distance
-    'maximumDistance': 1.25, # (float > 0) used to prevent weird considerations of locations of places in other states
-    'increments': 0.125, # (maximumDistance > float > 0) at what increments the data zooms into the center each iteration
-    'iterations': 6, # (int > 0) number of iterations to run the tool
-    'csvPath': "" # path of scraped data you wish to use.  Otherwise runs scraper
+    'sampleSize': 100, # anything higher than 10 takes a while
+    'zScoreLimitPrice': 100, # (float > 0) refinement level of data
+    'zScoreLimitDistance': 100, # (float > 0) refinement level of distance
+    'maximumDistance': 100, # (float > 0) used to prevent weird considerations of locations of places in other states
+    'increments': 0.375, # (maximumDistance > float > 0) at what increments the data zooms into the center each iteration
+    'iterations': 4, # (int > 0) number of iterations to run the tool
+    'csvPath': "", # path of scraped data you wish to use.  Otherwise runs scraper
+    'dbData': "" # used to specify a dataset of pre-existing entries that contain PARID and PRICE columns
 }
 
 convertedTarget = addressToLatLong(
@@ -33,13 +33,20 @@ if arguments['csvPath'] == "":
     entries = scrapeData(arguments)
     # saves last scrape to csv
     rawLocationDf = pd.DataFrame(entries)
-    rawLocationDf.to_csv(
-        'entries_' + arguments["targetAddress"] +
-        '_samplesize' + str(arguments['sampleSize']) +
-        '_' + str(len(arguments['additionalZips']) + 1) +
-        'zips.csv',
-        index=False
-    )
+    if (arguments["dbData"] == ""):
+        rawLocationDf.to_csv(
+            'entries_' + arguments["targetAddress"] +
+            '_samplesize' + str(arguments['sampleSize']) +
+            '_' + str(len(arguments['additionalZips']) + 1) +
+            'zips.csv',
+            index=False
+        )
+    else:
+        rawLocationDf.to_csv(
+            'entries_' + arguments["targetAddress"] +
+            '_' + arguments["dbData"] + '.csv',
+            index=False
+        )
 else:
     entries = pd.read_csv(arguments['csvPath']).to_dict(orient='list')
 
@@ -104,7 +111,7 @@ for iteration in range(arguments["iterations"]):
         f = open(filename, "w+")
         f.close()
         fig.write_image(filename)
-        # fig.show()
+        fig.show()
         # add target address
         entriesAtLevel['lat'].append(convertedTarget[0])
         entriesAtLevel['long'].append(convertedTarget[1])
@@ -126,6 +133,6 @@ for iteration in range(arguments["iterations"]):
         f = open(filename, "w+")
         f.close()
         fig.write_image(filename)
-        # fig.show()
+        fig.show()
         print("DONE")
     entriesAtLevel = {key: value[:] for key, value in entries.items()}
