@@ -9,13 +9,14 @@ arguments = {
     # wiehle reston metro is default location Lake Fairfax Dr, Reston, VA 20190
     'targetAddress': "1908 Reston Station Blvd", # (optional) <street number> <name> <type> e.g. 1234 anywhere blvd
     'targetCityStateZip': "Reston VA 20190", # (optional) <city> <state abbreviation> <zip> e.g. Podunk VA 20170
-    'mapQuestKey': "", # REQUIRED: get key from mapquest https://developer.mapquest.com/
+    'mapQuestKey': "h57onIjVo4j1MAvNzvfpXw19M8sWs1QD", # REQUIRED: get key from mapquest https://developer.mapquest.com/
     'additionalZips': ["20192", "20191", "20170", "20194"], # (optional) enter other zip codes near the area you are looking at for wider area
     'appraisalType': "APRTOT", # appraisal options are APRTOT, APRBLDG, and APRLAND
     'sampleSize': 100, # anything higher than 10 takes a while
     'zScoreLimitPrice': 100, # (float > 0) refinement level of data
     'zScoreLimitDistance': 100, # (float > 0) refinement level of distance
     'maximumDistance': 100, # (float > 0) used to prevent weird considerations of locations of places in other states
+    'maximumPrice': 20000000, # (float > 0) used to prevent insane prices from throwing things off
     'increments': 0.375, # (maximumDistance > float > 0) at what increments the data zooms into the center each iteration
     'iterations': 4, # (int > 0) number of iterations to run the tool
     'csvPath': "", # path of scraped data you wish to use.  Otherwise runs scraper
@@ -65,6 +66,10 @@ for iteration in range(arguments["iterations"]):
     startLen = len(entriesAtLevel['distance'])
     while i < len(entriesAtLevel['distance']):
         if entriesAtLevel['distance'][i] > distanceAtLevel:
+            for value in entriesAtLevel.values():
+                value.pop(i)
+            continue
+        if entriesAtLevel['price'][i] > arguments["maximumPrice"]:
             for value in entriesAtLevel.values():
                 value.pop(i)
             continue
