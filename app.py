@@ -117,14 +117,14 @@ def make_visualization(arguments):
                 xaxis_title="Distance (miles)",
                 yaxis_title="Tax Assessment (USD)"
             )
-            filename = "./visualizations/" +\
-                            targetName + "Distance" +\
-                            str(distanceAtLevel) +\
-                            "Rsquared" + str(round(Rsquared['determination'], 3)) + ".png"
-            f = open(filename, "w+")
-            f.close()
-            fig.write_image(filename)
-            fig.show()
+            # filename = "./visualizations/" +\
+            #                 targetName + "Distance" +\
+            #                 str(distanceAtLevel) +\
+            #                 "Rsquared" + str(round(Rsquared['determination'], 3)) + ".png"
+            # f = open(filename, "w+")
+            # f.close()
+            # fig.write_image(filename)
+            # fig.show()
             # add target address
             entriesAtLevel['lat'].append(convertedTarget[0])
             entriesAtLevel['long'].append(convertedTarget[1])
@@ -139,10 +139,11 @@ def make_visualization(arguments):
                                     center=dict(lat=convertedTarget[0], lon=convertedTarget[1]))
             fig.update_layout(mapbox_style="open-street-map")
             fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-            filename = "/html_vis/map" + str(iteration) + ".html"
+            filename = "./html_vis/map" + str(iteration) + ".html"
             # f = open(filename, "w+")
             # f.close()
-            fig.write_html(filename)
-            generated_figs.append("/html_vis/"+ filename + ".html")
+            fig.write_html(filename, auto_open=False)
+            generated_figs.append("./html_vis/"+ filename + ".html")
             print("DONE")
         entriesAtLevel = {key: value[:] for key, value in entries.items()}
+    return generated_figs
